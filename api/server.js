@@ -15,27 +15,33 @@ app.use((req, res, next) => {
   }
 });
 
-// Connection MongoDB avec options SSL
+// Test avec TLS désactivé
 const uri = process.env.MONGODB_URI || "mongodb+srv://rousslanfk_db_user:sZemKJAmuwUQAIb2@fresh.km6f53f.mongodb.net/juicefresh?retryWrites=true&w=majority";
 
 const client = new MongoClient(uri, {
-  tls: true,
-  tlsAllowInvalidCertificates: true,
-  serverSelectionTimeoutMS: 5000,
-  connectTimeoutMS: 10000
+  tls: false,
+  ssl: false
 });
 
-// Test MongoDB connection
 app.get('/api/test', async (req, res) => {
   try {
+    console.log('Testing MongoDB connection...');
+    console.log('URI exists:', !!process.env.MONGODB_URI);
+    
     await client.connect();
-    res.json({ success: true, message: "MongoDB connected!" });
+    console.log('Connected to MongoDB!');
+    
+    const db = client.db('juicefresh');
+    const collections = await db.collections();
+    console.log('Collections:', collections.map(c => c.collectionName));
+    
+    res.json({ success: true, message: "MongoDB connected!", collections: collections.length });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error('MongoDB error:', error);
+    res.json({ success: false, message: error.message, code: error.code });
   }
 });
 
-// Load player data
 app.get('/api/load', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -59,10 +65,9 @@ app.get('/api/load', async (req, res) => {
   }
 });
 
-// Save player data
 app.post('/api/save', async (req, res) => {
   try {
-    const { userId, level, gems, score, stars } = req.body;
+    const { userId, level, gems } = req.body;
     await client.connect();
     const db = client.db('juicefresh');
     const collection = db.collection('players');
