@@ -6,7 +6,10 @@ const app = express();
 const uri = "mongodb+srv://rousslanfk_db_user:Tj5e2o4Xd4KG0BUs@fresh.km6f53f.mongodb.net/?appName=Fresh";
 const client = new MongoClient(uri);
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://juicefreshse.netlify.app', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 app.post('/api/save', async (req, res) => {
