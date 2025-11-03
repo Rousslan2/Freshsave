@@ -1,41 +1,38 @@
-app.get('/api/test', async (req, res) => {
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+app.get('/api/test', (req, res) => {
   try {
-    console.log('Environment check:');
-    console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
-    console.log('URI length:', process.env.MONGODB_URI?.length || 0);
+    const hasMongo = !!require('mongodb');
+    const hasUri = !!process.env.MONGODB_URI;
     
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      return res.json({ success: false, message: "MONGODB_URI not set in Vercel" });
-    }
-    
-    console.log('Attempting connection...');
-    const client = new MongoClient(uri, {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 10000
-    });
-    
-    await client.connect();
-    console.log('✅ Connected!');
-    
-    const db = client.db('juicefresh');
-    const collections = await db.collections();
-    
-    await client.close();
-    
-    res.json({ 
-      success: true, 
-      message: "MongoDB connected!", 
-      collections: collections.length,
-      db: 'juicefresh'
+    res.json({
+      success: true,
+      message: "Function works!",
+      mongodb: hasMongo,
+      uri: hasUri,
+      uriLength: process.env.MONGODB_URI?.length || 0
     });
   } catch (error) {
-    console.error('❌ Error:', error);
-    res.json({ 
-      success: false, 
-      message: error.message, 
-      code: error.code,
-      codeName: error.codeName
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      stack: error.stack
     });
   }
 });
+
+module.exports = app;
